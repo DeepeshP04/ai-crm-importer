@@ -5,91 +5,99 @@ import { FiUpload, FiFileText } from "react-icons/fi";
 
 export default function UploadModal() {
   return (
-    <div className="min-h-screen bg-gray-100 flex items-center justify-center p-6">
-      <div className="w-full max-w-xl bg-white rounded-2xl shadow-xl">
+    <div className="min-h-screen bg-black/30 flex items-center justify-center p-4">
+      <div className="w-full max-w-lg bg-white rounded-2xl shadow-2xl overflow-hidden">
 
         {/* Header */}
-        <div className="flex justify-between items-start p-6 pb-4">
+        <div className="flex items-start justify-between px-5 py-4 border-b border-gray-100">
           <div>
-            <h2 className="text-3xl font-bold text-gray-900">
+            <h2 className="text-xl font-bold text-gray-900">
               Import Leads via CSV
             </h2>
 
-            <p className="text-gray-500 mt-1">
+            <p className="text-xs text-gray-500 mt-1">
               Upload a CSV file to bulk import leads into your system.
             </p>
           </div>
 
-          <button className="text-gray-500 hover:text-black">
-            <IoClose size={24} />
+          <button className="text-gray-400 hover:text-gray-700 transition">
+            <IoClose size={20} />
           </button>
         </div>
 
-        {/* Upload Area */}
+        {/* Body */}
+        <div className="p-5">
+          <div className="border-2 border-dashed border-gray-300 rounded-xl py-6 px-5 text-center hover:border-teal-500 transition cursor-pointer">
 
-        <div className="px-6">
-
-          <div className="border-2 border-dashed border-gray-300 rounded-xl p-10 text-center">
-
+            {/* Upload Icon */}
             <div className="flex justify-center">
-
-              <div className="w-20 h-20 rounded-xl border bg-white flex items-center justify-center shadow-sm">
+              <div className="w-14 h-14 rounded-xl border border-gray-200 bg-white shadow-sm flex items-center justify-center">
                 <FiUpload
-                  size={34}
+                  size={24}
                   className="text-teal-600"
                 />
               </div>
-
             </div>
 
-            <h3 className="text-3xl font-bold mt-8">
+            {/* Title */}
+            <h3 className="text-lg font-semibold text-gray-900 mt-4">
               Drop your CSV file here
             </h3>
 
-            <p className="text-gray-500 mt-2">
+            <p className="text-sm text-gray-500 mt-1">
               or click to browse files
             </p>
 
-            <div className="inline-flex items-center gap-2 bg-gray-100 rounded-full px-4 py-2 mt-6 text-sm text-gray-600">
+            {/* Supported File */}
+            <div className="inline-flex items-center gap-2 mt-4 bg-gray-100 rounded-full px-3 py-1.5 text-xs text-gray-600">
               <span>ⓘ</span>
-              Supported file: .csv (max 5MB)
+              Supported file: <strong>.csv</strong> (max 5MB)
             </div>
 
-            <p className="mt-6 text-sm text-gray-500 leading-6">
-              Required headers: created_at, name, email,
-              country_code, mobile_without_country_code,
-              company, city, state, country, lead_owner,
-              crm_status, crm_note.
-
-              Template includes default + custom CRM fields
-              to reduce upload errors.
+            {/* Description */}
+            <p className="text-[11px] leading-5 text-gray-500 mt-4 max-w-md mx-auto">
+              Required headers:
+              <br />
+              created_at, name, email, country_code,
+              mobile_without_country_code,
+              company, city, state, country,
+              lead_owner, crm_status, crm_note.
+              <br />
+              Template includes default + custom CRM
+              fields to reduce upload errors.
             </p>
 
-            <button className="mt-8 inline-flex items-center gap-2 bg-teal-50 hover:bg-teal-100 text-teal-700 px-6 py-3 rounded-xl font-medium transition">
-
-              <FiFileText />
-
+            {/* Download Button */}
+            <button
+              className="mt-5 inline-flex items-center gap-2
+              bg-teal-50
+              hover:bg-teal-100
+              text-teal-700
+              px-4
+              py-2
+              rounded-lg
+              text-sm
+              font-medium
+              transition"
+            >
+              <FiFileText size={16} />
               Download Sample CSV Template
-
             </button>
-
           </div>
-
         </div>
 
         {/* Footer */}
+        <div className="flex gap-3 p-5 border-t border-gray-100">
 
-        <div className="flex gap-4 p-6">
-
-          <button className="flex-1 border rounded-xl py-4 text-lg font-semibold hover:bg-gray-50 transition">
-
+          <button
+            className="flex-1 border border-gray-300 rounded-lg py-2.5 text-sm font-semibold hover:bg-gray-50 transition"
+          >
             Cancel
-
           </button>
 
           <button
             disabled
-            className="flex-1 rounded-xl py-4 bg-orange-300 text-white text-lg font-semibold cursor-not-allowed"
+            className="flex-1 rounded-lg py-2.5 text-sm font-semibold text-white bg-orange-300 cursor-not-allowed"
           >
             Upload File
           </button>
