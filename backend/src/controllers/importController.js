@@ -1,3 +1,5 @@
+const parseCSV = require("../services/csvParser");
+
 exports.importCSV = async (req, res) => {
   try {
     if (!req.file) {
@@ -7,13 +9,23 @@ exports.importCSV = async (req, res) => {
       });
     }
 
-    res.json({
+    const parsedCSV = await parseCSV(req.file.buffer);
+
+    res.status(200).json({
       success: true,
-      message: "CSV received successfully.",
-      fileName: req.file.originalname,
-      fileSize: req.file.size,
+      message: "CSV parsed successfully.",
+      file: {
+        name: req.file.originalname,
+        size: req.file.size,
+      },
+      totalRows: parsedCSV.rows.length,
+      totalColumns: parsedCSV.headers.length,
+      headers: parsedCSV.headers,
+      preview: parsedCSV.rows.slice(0, 10),
     });
   } catch (error) {
+    console.error(error);
+
     res.status(500).json({
       success: false,
       message: error.message,
