@@ -6,31 +6,37 @@ import { IoClose } from "react-icons/io5";
 import { FiUpload, FiFileText } from "react-icons/fi";
 import Papa from "papaparse";
 import PreviewTable from "./PreviewTable";
+import { uploadCSV } from "@/services/api";
 
 export default function UploadModal() {
   const [selectedFile, setSelectedFile] = useState(null);
   const [csvData, setCsvData] = useState([]);
-const [headers, setHeaders] = useState([]);
+  const [headers, setHeaders] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [result, setResult] = useState(null);
+  const [error, setError] = useState("");
 
   const onDrop = useCallback((acceptedFiles, rejectedFiles) => {
-  if (rejectedFiles.length) {
-    alert("Please upload a valid CSV file.");
-    return;
-  }
+    if (rejectedFiles.length) {
+      alert("Please upload a valid CSV file.");
+      return;
+    }
 
-  const file = acceptedFiles[0];
+    const file = acceptedFiles[0];
 
-  setSelectedFile(file);
+    setSelectedFile(file);
+    setResult(null);
+    setError("");
 
-  Papa.parse(file, {
-    header: true,
-    skipEmptyLines: true,
-    complete: (results) => {
-      setCsvData(results.data);
-      setHeaders(results.meta.fields || []);
-    },
-  });
-}, []);
+    Papa.parse(file, {
+      header: true,
+      skipEmptyLines: true,
+      complete: (results) => {
+        setCsvData(results.data);
+        setHeaders(results.meta.fields || []);
+      },
+    });
+  }, []);
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     accept: {
@@ -41,130 +47,142 @@ const [headers, setHeaders] = useState([]);
     onDrop,
   });
 
+  const handleUpload = async () => {
+    try {
+      setLoading(true);
+      setError("");
+
+      const response = await uploadCSV(selectedFile);
+
+      setResult(response);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-black/30 flex items-center justify-center p-4">
       <div className="w-full max-w-lg bg-white rounded-2xl shadow-2xl overflow-hidden">
-
         {/* Header */}
 
         <div className="flex items-start justify-between px-5 py-4 border-b">
           <div>
-            <h2 className="text-xl font-bold">
-              Import Leads via CSV
-            </h2>
+            <h2 className="text-xl font-bold">Import Leads via CSV</h2>
 
             <p className="text-xs text-gray-500 mt-1">
               Upload a CSV file to bulk import leads.
             </p>
           </div>
 
-          <IoClose
-            size={20}
-            className="cursor-pointer text-gray-500"
-          />
+          <IoClose size={20} className="cursor-pointer text-gray-500" />
         </div>
 
         {/* Upload */}
 
         <div className="p-5">
-
-  {!selectedFile ? (
-
-    <div
-      {...getRootProps()}
-      className={`border-2 border-dashed rounded-xl py-6 px-5 text-center cursor-pointer transition
+          {!selectedFile ? (
+            <div
+              {...getRootProps()}
+              className={`border-2 border-dashed rounded-xl py-6 px-5 text-center cursor-pointer transition
       ${
         isDragActive
           ? "border-teal-500 bg-teal-50"
           : "border-gray-300 hover:border-teal-500"
       }`}
-    >
-      <input {...getInputProps()} />
+            >
+              <input {...getInputProps()} />
 
-      <div className="flex justify-center">
-        <div className="w-14 h-14 rounded-xl border bg-white shadow-sm flex items-center justify-center">
-          <FiUpload size={24} className="text-teal-600" />
+              <div className="flex justify-center">
+                <div className="w-14 h-14 rounded-xl border bg-white shadow-sm flex items-center justify-center">
+                  <FiUpload size={24} className="text-teal-600" />
+                </div>
+              </div>
+
+              <h3 className="text-lg font-semibold mt-4">
+                {isDragActive ? "Drop the CSV here" : "Drop your CSV file here"}
+              </h3>
+
+              <p className="text-sm text-gray-500 mt-1">or click to browse</p>
+
+              <div className="inline-flex items-center gap-2 mt-4 bg-gray-100 rounded-full px-3 py-1 text-xs">
+                Supported: .csv (Max 5MB)
+              </div>
+
+              <p className="text-[11px] leading-5 text-gray-500 mt-4 max-w-md mx-auto">
+                Required headers:
+                <br />
+                created_at, name, email, country_code,
+                mobile_without_country_code, company, city, state, country,
+                lead_owner, crm_status, crm_note.
+              </p>
+
+              <button
+                type="button"
+                className="mt-5 inline-flex items-center gap-2 bg-teal-50 hover:bg-teal-100 text-teal-700 px-4 py-2 rounded-lg text-sm"
+              >
+                <FiFileText />
+                Download Sample CSV
+              </button>
+            </div>
+          ) : (
+            <PreviewTable
+              file={selectedFile}
+              headers={headers}
+              rows={csvData.slice(0, 20)}
+              onRemove={() => {
+                setSelectedFile(null);
+                setCsvData([]);
+                setHeaders([]);
+                setResult(null);
+                setError("");
+              }}
+            />
+          )}
         </div>
-      </div>
 
-      <h3 className="text-lg font-semibold mt-4">
-        {isDragActive ? "Drop the CSV here" : "Drop your CSV file here"}
-      </h3>
-
-      <p className="text-sm text-gray-500 mt-1">
-        or click to browse
-      </p>
-
-      <div className="inline-flex items-center gap-2 mt-4 bg-gray-100 rounded-full px-3 py-1 text-xs">
-        Supported: .csv (Max 5MB)
-      </div>
-
-      <p className="text-[11px] leading-5 text-gray-500 mt-4 max-w-md mx-auto">
-        Required headers:
-        <br />
-        created_at, name, email, country_code,
-        mobile_without_country_code,
-        company, city, state, country,
-        lead_owner, crm_status, crm_note.
-      </p>
-
-      <button
-        type="button"
-        className="mt-5 inline-flex items-center gap-2 bg-teal-50 hover:bg-teal-100 text-teal-700 px-4 py-2 rounded-lg text-sm"
-      >
-        <FiFileText />
-        Download Sample CSV
-      </button>
-
-    </div>
-
-  ) : (
-
-    <PreviewTable
-  file={selectedFile}
-  headers={headers}
-  rows={csvData.slice(0, 20)}
-  onRemove={() => {
-    setSelectedFile(null);
-    setCsvData([]);
-    setHeaders([]);
-  }}
-/>
-
-  )}
-
-</div>
+        {error && <p className="mt-4 text-red-600 text-sm">{error}</p>}
 
         {/* Footer */}
 
         <div className="flex gap-3 p-5 border-t">
-
           <button className="flex-1 border rounded-lg py-2.5 text-sm font-semibold">
             Cancel
           </button>
 
           <button
-            disabled={csvData.length === 0}
+            onClick={handleUpload}
+            disabled={!selectedFile || loading}
             className={`
-              flex-1
-              rounded-lg
-              py-2.5
-              text-sm
-              font-semibold
-              text-white
-
-              ${
-                selectedFile
-                  ? "bg-orange-500 hover:bg-orange-600"
-                  : "bg-orange-300 cursor-not-allowed"
-              }
-            `}
+    flex-1
+    rounded-lg
+    py-2.5
+    text-sm
+    font-semibold
+    text-white
+    ${
+      loading
+        ? "bg-gray-400 cursor-wait"
+        : selectedFile
+          ? "bg-orange-500 hover:bg-orange-600"
+          : "bg-orange-300 cursor-not-allowed"
+    }
+  `}
           >
-            Upload File
+            {loading ? "Processing..." : "Upload File"}
           </button>
-
         </div>
 
+        {result && (
+          <div className="mt-4 p-4 rounded-lg bg-green-50 border border-green-200">
+            <p>
+              Successfully imported
+              <strong>{result.summary.imported}</strong>
+              records
+            </p>
+          </div>
+        )}
       </div>
     </div>
   );

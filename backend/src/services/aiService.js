@@ -7,26 +7,35 @@ const model = genAI.getGenerativeModel({
   model: "gemini-2.5-flash",
 });
 
+const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
 const extractCRMData = async (records) => {
-  try {
-    const prompt = buildPrompt(records);
+  const prompt = buildPrompt(records);
 
-    const result = await model.generateContent(prompt);
+  const maxRetries = 3;
 
-    const response = await result.response;
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      const result = await model.generateContent(prompt);
 
-    let text = response.text();
+      const response = await result.response;
 
-    // Remove markdown code fences if Gemini returns them
-    text = text.replace(/```json/g, "").replace(/```/g, "").trim();
+      let text = response.text();
 
-    const crmRecords = JSON.parse(text);
+      text = text.replace(/```json/g, "").replace(/```/g, "").trim();
 
-    return crmRecords;
-  } catch (error) {
-    console.error("AI Service Error:", error);
+      return JSON.parse(text);
 
-    throw new Error("Failed to extract CRM data using AI.");
+    } catch (error) {
+
+      console.error(`Attempt ${attempt} failed:`, error.message);
+
+      if (attempt === maxRetries) {
+        throw new Error("Failed to extract CRM data after multiple attempts.");
+      }
+
+      await sleep(2000 * attempt);
+    }
   }
 };
 

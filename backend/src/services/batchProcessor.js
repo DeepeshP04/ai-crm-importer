@@ -11,22 +11,16 @@ const processInBatches = async (records, batchSize = 100) => {
     );
 
     try {
+      const batchResult = await extractCRMData(batch);
 
-    const batchResult = await extractCRMData(batch);
-
-    if(Array.isArray(batchResult)){
+      if (Array.isArray(batchResult)) {
         allResults.push(...batchResult);
-    }
-
-}
-catch(error){
-
-    console.error("Batch Failed:", error.message);
-
-}
-
-    if (Array.isArray(batchResult)) {
-      allResults.push(...batchResult);
+      }
+    } catch (error) {
+      console.error(
+        `Batch ${Math.floor(i / batchSize) + 1} failed:`,
+        error.message
+      );
     }
   }
 

@@ -31,16 +31,16 @@ exports.importCSV = async (req, res) => {
 
     // Return response
     res.status(200).json({
-      success: true,
+  success: true,
 
-      totalRows: parsedCSV.rows.length,
+  summary: {
+    totalRows: parsedCSV.rows.length,
+    imported: crmRecords.length,
+    skipped: skippedRecords,
+  },
 
-      imported: crmRecords.length,
-
-      skipped: skippedRecords,
-
-      records: crmRecords,
-    });
+  records: crmRecords,
+});
 
   } catch (error) {
 
