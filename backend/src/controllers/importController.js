@@ -25,22 +25,34 @@ exports.importCSV = async (req, res) => {
     // Process with AI
     const crmRecords = await processInBatches(parsedCSV.rows);
 
-    // Count skipped records
-    const skippedRecords =
-      parsedCSV.rows.length - crmRecords.length;
+    console.log("✅ AI Processing Completed");
+
+    const skippedRecords = Math.max(parsedCSV.rows.length - crmRecords.length, 0);
+
+    console.log("\n========== IMPORT SUMMARY ==========");
+    console.log(`📄 Total Records   : ${parsedCSV.rows.length}`);
+    console.log(`✅ Imported        : ${crmRecords.length}`);
+    console.log(`⚠️  Skipped        : ${skippedRecords}`);
+    console.log("====================================\n");
+
+    // Optional: Show first few parsed records
+    console.log("📋 Sample Parsed Records:");
+    console.table(crmRecords.slice(0, 5));
 
     // Return response
     res.status(200).json({
-  success: true,
-
-  summary: {
-    totalRows: parsedCSV.rows.length,
-    imported: crmRecords.length,
-    skipped: skippedRecords,
-  },
-
-  records: crmRecords,
-});
+      success: true,
+      summary: {
+        totalRows: parsedCSV.rows.length,
+        imported: crmRecords.length,
+        skipped: skippedRecords,
+      },
+      records: crmRecords,
+      metadata: {
+        headers: parsedCSV.headers,
+        processedBatches: Math.ceil(parsedCSV.rows.length / 100),
+      },
+    });
 
   } catch (error) {
 

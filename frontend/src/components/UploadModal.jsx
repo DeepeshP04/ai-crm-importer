@@ -7,6 +7,7 @@ import { FiUpload, FiFileText } from "react-icons/fi";
 import Papa from "papaparse";
 import PreviewTable from "./PreviewTable";
 import { uploadCSV } from "@/services/api";
+import ResultTable from "./ResultTable";
 
 export default function UploadModal() {
   const [selectedFile, setSelectedFile] = useState(null);
@@ -15,6 +16,7 @@ export default function UploadModal() {
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState(null);
   const [error, setError] = useState("");
+  const [isConfirmed, setIsConfirmed] = useState(false);
 
   const onDrop = useCallback((acceptedFiles, rejectedFiles) => {
     if (rejectedFiles.length) {
@@ -27,13 +29,26 @@ export default function UploadModal() {
     setSelectedFile(file);
     setResult(null);
     setError("");
+    setIsConfirmed(false);
 
     Papa.parse(file, {
       header: true,
       skipEmptyLines: true,
       complete: (results) => {
+        if (results.errors?.length) {
+          setError("The selected CSV could not be parsed cleanly. Please verify the file and try again.");
+          setCsvData([]);
+          setHeaders([]);
+          return;
+        }
+
         setCsvData(results.data);
         setHeaders(results.meta.fields || []);
+      },
+      error: () => {
+        setError("The selected CSV could not be parsed. Please try another file.");
+        setCsvData([]);
+        setHeaders([]);
       },
     });
   }, []);
@@ -48,6 +63,8 @@ export default function UploadModal() {
   });
 
   const handleUpload = async () => {
+    if (!selectedFile) return;
+
     try {
       setLoading(true);
       setError("");
@@ -55,8 +72,9 @@ export default function UploadModal() {
       const response = await uploadCSV(selectedFile);
 
       setResult(response);
+      setIsConfirmed(true);
     } catch (err) {
-      setError(err.message);
+      setError(err.message || "Import failed. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -64,7 +82,7 @@ export default function UploadModal() {
 
   return (
     <div className="min-h-screen bg-black/30 flex items-center justify-center p-4">
-      <div className="w-full max-w-lg bg-white rounded-2xl shadow-2xl overflow-hidden">
+      <div className="w-full max-w-7xl bg-white rounded-2xl shadow-2xl overflow-hidden">
         {/* Header */}
 
         <div className="flex items-start justify-between px-5 py-4 border-b">
@@ -82,7 +100,11 @@ export default function UploadModal() {
         {/* Upload */}
 
         <div className="p-5">
-          {!selectedFile ? (
+          {result ? (
+
+<ResultTable result={result} />
+
+) : !selectedFile ? (
             <div
               {...getRootProps()}
               className={`border-2 border-dashed rounded-xl py-6 px-5 text-center cursor-pointer transition
@@ -111,20 +133,9 @@ export default function UploadModal() {
               </div>
 
               <p className="text-[11px] leading-5 text-gray-500 mt-4 max-w-md mx-auto">
-                Required headers:
-                <br />
-                created_at, name, email, country_code,
-                mobile_without_country_code, company, city, state, country,
-                lead_owner, crm_status, crm_note.
+                The importer is designed for arbitrary column names and layouts.
+                It will intelligently map your columns to CRM fields after previewing the file.
               </p>
-
-              <button
-                type="button"
-                className="mt-5 inline-flex items-center gap-2 bg-teal-50 hover:bg-teal-100 text-teal-700 px-4 py-2 rounded-lg text-sm"
-              >
-                <FiFileText />
-                Download Sample CSV
-              </button>
             </div>
           ) : (
             <PreviewTable
@@ -137,6 +148,7 @@ export default function UploadModal() {
                 setHeaders([]);
                 setResult(null);
                 setError("");
+                setIsConfirmed(false);
               }}
             />
           )}
@@ -144,37 +156,52 @@ export default function UploadModal() {
 
         {error && <p className="mt-4 text-red-600 text-sm">{error}</p>}
 
+        {!result && selectedFile && !loading && (
+          <div className="px-5 pb-5">
+            <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800">
+              <p className="font-semibold">Preview ready</p>
+              <p className="mt-1">
+                Review the uploaded rows above, then confirm to send the data to the AI-powered import pipeline.
+              </p>
+            </div>
+          </div>
+        )}
+
         {/* Footer */}
 
-        <div className="flex gap-3 p-5 border-t">
-          <button className="flex-1 border rounded-lg py-2.5 text-sm font-semibold">
-            Cancel
-          </button>
+{!result && (
+  <div className="flex gap-3 p-5 border-t">
+    <button
+      onClick={() => {
+        setSelectedFile(null);
+        setCsvData([]);
+        setHeaders([]);
+        setError("");
+        setIsConfirmed(false);
+      }}
+      className="flex-1 border rounded-lg py-2.5 text-sm font-semibold"
+    >
+      Cancel
+    </button>
 
-          <button
-            onClick={handleUpload}
-            disabled={!selectedFile || loading}
-            className={`
-    flex-1
-    rounded-lg
-    py-2.5
-    text-sm
-    font-semibold
-    text-white
-    ${
-      loading
-        ? "bg-gray-400 cursor-wait"
-        : selectedFile
+    <button
+      onClick={handleUpload}
+      disabled={!selectedFile || loading || isConfirmed}
+      className={`flex-1 rounded-lg py-2.5 text-sm font-semibold text-white
+      ${
+        loading
+          ? "bg-gray-400 cursor-wait"
+          : selectedFile && !isConfirmed
           ? "bg-orange-500 hover:bg-orange-600"
           : "bg-orange-300 cursor-not-allowed"
-    }
-  `}
-          >
-            {loading ? "Processing..." : "Upload File"}
-          </button>
-        </div>
+      }`}
+    >
+      {loading ? "Processing..." : isConfirmed ? "Import Confirmed" : "Confirm Import"}
+    </button>
+  </div>
+)}
 
-        {result && (
+        {/* {result && (
           <div className="mt-4 p-4 rounded-lg bg-green-50 border border-green-200">
             <p>
               Successfully imported
@@ -182,7 +209,7 @@ export default function UploadModal() {
               records
             </p>
           </div>
-        )}
+        )} */}
       </div>
     </div>
   );

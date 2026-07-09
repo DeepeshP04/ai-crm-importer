@@ -1,4 +1,5 @@
 const extractCRMData = require("./aiService");
+const mapRecordsWithHeuristics = require("./heuristicMapper");
 
 const processInBatches = async (records, batchSize = 100) => {
   const allResults = [];
@@ -21,6 +22,9 @@ const processInBatches = async (records, batchSize = 100) => {
         `Batch ${Math.floor(i / batchSize) + 1} failed:`,
         error.message
       );
+
+      const fallbackRecords = mapRecordsWithHeuristics(batch);
+      allResults.push(...fallbackRecords);
     }
   }
 

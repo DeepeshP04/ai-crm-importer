@@ -1,5 +1,6 @@
 const { GoogleGenerativeAI } = require("@google/generative-ai");
 const buildPrompt = require("./promptBuilder");
+const validateRecords = require("./recordValidator");
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
@@ -17,17 +18,23 @@ const extractCRMData = async (records) => {
   for (let attempt = 1; attempt <= maxRetries; attempt++) {
     try {
       const result = await model.generateContent(prompt);
-
       const response = await result.response;
 
       let text = response.text();
 
-      text = text.replace(/```json/g, "").replace(/```/g, "").trim();
+      text = text
+        .replace(/```json/g, "")
+        .replace(/```/g, "")
+        .trim();
 
-      return JSON.parse(text);
+      console.log("\n===== AI RESPONSE =====");
+console.log(text);
+
+      const aiRecords = JSON.parse(text);
+
+      return validateRecords(aiRecords);
 
     } catch (error) {
-
       console.error(`Attempt ${attempt} failed:`, error.message);
 
       if (attempt === maxRetries) {
