@@ -303,7 +303,7 @@ export default function UploadModal() {
           ? "bg-gray-400 cursor-wait"
           : selectedFile && !isConfirmed
           ? "bg-orange-500 hover:bg-orange-600"
-          : "bg-orange-300 cursor-not-allowed"
+          : "bg-orange-200 text-orange-500 cursor-not-allowed"
       }`}
     >
       {loading ? "Processing..." : isConfirmed ? "Import Confirmed" : "Upload File"}
