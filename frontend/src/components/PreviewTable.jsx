@@ -1,5 +1,6 @@
 "use client";
 
+import { useMemo, useRef, useState } from "react";
 import { FiFileText } from "react-icons/fi";
 import { IoClose } from "react-icons/io5";
 
@@ -9,6 +10,33 @@ export default function PreviewTable({
   rows,
   onRemove,
 }) {
+  const ROW_HEIGHT = 42;
+  const CONTAINER_HEIGHT = 280;
+  const listRef = useRef(null);
+  const [scrollTop, setScrollTop] = useState(0);
+
+  const rowCount = rows.length;
+  const visibleCount = Math.ceil(CONTAINER_HEIGHT / ROW_HEIGHT) + 3;
+
+  const { startIndex, visibleRows, paddingTop, paddingBottom } = useMemo(() => {
+    const start = Math.max(0, Math.floor(scrollTop / ROW_HEIGHT) - 1);
+    const end = Math.min(rowCount, start + visibleCount);
+    const visible = rows.slice(start, end);
+    const top = start * ROW_HEIGHT;
+    const bottom = Math.max(0, rowCount * ROW_HEIGHT - top - visible.length * ROW_HEIGHT);
+
+    return {
+      startIndex: start,
+      visibleRows: visible,
+      paddingTop: top,
+      paddingBottom: bottom,
+    };
+  }, [rows, rowCount, scrollTop, visibleCount]);
+
+  const handleScroll = (event) => {
+    setScrollTop(event.target.scrollTop);
+  };
+
   return (
     <div>
 
@@ -51,15 +79,20 @@ export default function PreviewTable({
 
         <div className="overflow-x-auto">
 
-          <div className="max-h-72 overflow-y-auto">
+          <div
+            className="overflow-y-auto"
+            style={{ maxHeight: `${CONTAINER_HEIGHT}px` }}
+            onScroll={handleScroll}
+            ref={listRef}
+          >
 
             <table className="min-w-full text-sm">
 
-              <thead className="sticky top-0 bg-gray-100">
+              <thead className="sticky top-0 bg-gray-100 z-10">
 
                 <tr>
 
-                  {headers.map(header=>(
+                  {headers.map((header) => (
                     <th
                       key={header}
                       className="px-4 py-3 text-left whitespace-nowrap border-b font-semibold"
@@ -73,29 +106,31 @@ export default function PreviewTable({
               </thead>
 
               <tbody>
+                {paddingTop > 0 && (
+                  <tr style={{ height: `${paddingTop}px` }}>
+                    <td colSpan={headers.length} />
+                  </tr>
+                )}
 
-                {rows.map((row,index)=>(
-
-                  <tr
-                    key={index}
-                    className="hover:bg-gray-50"
-                  >
-
-                    {headers.map(header=>(
-
+                {visibleRows.map((row, index) => (
+                  <tr key={startIndex + index} className="hover:bg-gray-50">
+                    {headers.map((header) => (
                       <td
                         key={header}
                         className="px-4 py-3 border-b whitespace-nowrap"
+                        style={{ height: `${ROW_HEIGHT}px` }}
                       >
                         {row[header]}
                       </td>
-
                     ))}
-
                   </tr>
-
                 ))}
 
+                {paddingBottom > 0 && (
+                  <tr style={{ height: `${paddingBottom}px` }}>
+                    <td colSpan={headers.length} />
+                  </tr>
+                )}
               </tbody>
 
             </table>

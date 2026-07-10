@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useDropzone } from "react-dropzone";
 import { IoClose } from "react-icons/io5";
 import { FiUpload, FiFileText } from "react-icons/fi";
@@ -22,6 +22,24 @@ export default function UploadModal() {
     percent: 0,
     message: "",
   });
+  const [darkMode, setDarkMode] = useState(false);
+
+  useEffect(() => {
+    const storedTheme = window.localStorage.getItem("ai-crm-theme");
+    const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+    const enabled = storedTheme ? storedTheme === "dark" : prefersDark;
+    setDarkMode(enabled);
+    document.documentElement.classList.toggle("dark", enabled);
+  }, []);
+
+  const toggleDarkMode = () => {
+    setDarkMode((prev) => {
+      const next = !prev;
+      document.documentElement.classList.toggle("dark", next);
+      window.localStorage.setItem("ai-crm-theme", next ? "dark" : "light");
+      return next;
+    });
+  };
 
   const onDrop = useCallback((acceptedFiles, rejectedFiles) => {
     if (rejectedFiles.length) {
@@ -128,7 +146,16 @@ export default function UploadModal() {
             </p>
           </div>
 
-          <IoClose size={20} className="cursor-pointer text-gray-500" />
+          <div className="flex items-center gap-3">
+            <button
+              type="button"
+              onClick={toggleDarkMode}
+              className="rounded-full border border-slate-300 bg-slate-100 px-3 py-1 text-sm font-medium text-slate-700 hover:bg-slate-200 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 dark:hover:bg-slate-700"
+            >
+              {darkMode ? "Light mode" : "Dark mode"}
+            </button>
+            <IoClose size={20} className="cursor-pointer text-gray-500" />
+          </div>
         </div>
 
         {/* Upload */}

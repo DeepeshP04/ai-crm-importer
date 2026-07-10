@@ -1,7 +1,13 @@
 "use client";
 
+import { useMemo, useRef, useState } from "react";
+
 export default function ResultTable({ result }) {
   const records = result.records || [];
+  const ROW_HEIGHT = 52;
+  const CONTAINER_HEIGHT = 560;
+  const listRef = useRef(null);
+  const [scrollTop, setScrollTop] = useState(0);
 
   const columns = [
     { key: "created_at", label: "Created At" },
@@ -67,7 +73,12 @@ export default function ResultTable({ result }) {
 
         <div className="overflow-x-auto">
 
-          <div className="max-h-[600px] overflow-y-auto">
+          <div
+            className="overflow-y-auto"
+            style={{ maxHeight: `${CONTAINER_HEIGHT}px` }}
+            onScroll={(event) => setScrollTop(event.target.scrollTop)}
+            ref={listRef}
+          >
 
             <table className="min-w-[1800px] w-full text-sm">
 
@@ -89,34 +100,50 @@ export default function ResultTable({ result }) {
               </thead>
 
               <tbody>
+                {(() => {
+                  const rowCount = records.length;
+                  const visibleCount = Math.ceil(CONTAINER_HEIGHT / ROW_HEIGHT) + 3;
+                  const start = Math.max(0, Math.floor(scrollTop / ROW_HEIGHT) - 1);
+                  const end = Math.min(rowCount, start + visibleCount);
+                  const visibleRows = records.slice(start, end);
+                  const paddingTop = start * ROW_HEIGHT;
+                  const paddingBottom = Math.max(0, rowCount * ROW_HEIGHT - paddingTop - visibleRows.length * ROW_HEIGHT);
 
-                {records.map((record, index) => (
+                  return (
+                    <>
+                      {paddingTop > 0 && (
+                        <tr style={{ height: `${paddingTop}px` }}>
+                          <td colSpan={columns.length} />
+                        </tr>
+                      )}
 
-                  <tr
-                    key={index}
-                    className="hover:bg-gray-50"
-                  >
+                      {visibleRows.map((record, index) => (
+                        <tr key={start + index} className="hover:bg-gray-50">
+                          {columns.map((column) => (
+                            <td
+                              key={column.key}
+                              className={`px-4 py-3 border-b align-top ${
+                                column.key === "crm_note" ||
+                                column.key === "description"
+                                  ? "min-w-[300px] whitespace-pre-wrap"
+                                  : "whitespace-nowrap"
+                              }`}
+                              style={{ height: `${ROW_HEIGHT}px` }}
+                            >
+                              {record[column.key] || "-"}
+                            </td>
+                          ))}
+                        </tr>
+                      ))}
 
-                    {columns.map((column) => (
-
-                      <td
-                        key={column.key}
-                        className={`px-4 py-3 border-b align-top ${
-                          column.key === "crm_note" ||
-                          column.key === "description"
-                            ? "min-w-[300px] whitespace-pre-wrap"
-                            : "whitespace-nowrap"
-                        }`}
-                      >
-                        {record[column.key] || "-"}
-                      </td>
-
-                    ))}
-
-                  </tr>
-
-                ))}
-
+                      {paddingBottom > 0 && (
+                        <tr style={{ height: `${paddingBottom}px` }}>
+                          <td colSpan={columns.length} />
+                        </tr>
+                      )}
+                    </>
+                  );
+                })()}
               </tbody>
 
             </table>
