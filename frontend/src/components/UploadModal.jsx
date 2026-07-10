@@ -198,19 +198,28 @@ export default function UploadModal() {
               </p>
 
               <button
-              className="mt-7 inline-flex items-center gap-2
-              bg-teal-50
-              hover:bg-teal-100
-              text-teal-700
-              px-5
-              py-3
-              rounded-xl
-              font-medium
-              transition"
-            >
-              <FiFileText />
-              Download Sample CSV Template
-            </button>
+  type="button"
+  onClick={() => {
+    const link = document.createElement("a");
+    link.href = "/sample-leads.csv";
+    link.download = "Sample_CRM_Template.csv";
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  }}
+  className="mt-7 inline-flex items-center gap-2
+  bg-teal-50
+  hover:bg-teal-100
+  text-teal-700
+  px-5
+  py-3
+  rounded-xl
+  font-medium
+  transition"
+>
+  <FiFileText />
+  Download Sample CSV Template
+</button>
 
             </div>
           ) : (
