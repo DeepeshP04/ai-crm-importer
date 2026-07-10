@@ -17,6 +17,11 @@ export default function UploadModal() {
   const [result, setResult] = useState(null);
   const [error, setError] = useState("");
   const [isConfirmed, setIsConfirmed] = useState(false);
+  const [progress, setProgress] = useState({
+    stage: "idle",
+    percent: 0,
+    message: "",
+  });
 
   const onDrop = useCallback((acceptedFiles, rejectedFiles) => {
     if (rejectedFiles.length) {
@@ -68,13 +73,42 @@ export default function UploadModal() {
     try {
       setLoading(true);
       setError("");
+      setProgress({
+        stage: "uploading",
+        percent: 10,
+        message: "Uploading CSV to AI import pipeline...",
+      });
 
-      const response = await uploadCSV(selectedFile);
+      const response = await uploadCSV(selectedFile, ({ loaded, total }) => {
+        const percent = total ? Math.min(80, Math.round((loaded / total) * 60) + 10) : 10;
+        setProgress((prev) => ({
+          ...prev,
+          stage: "uploading",
+          percent,
+          message: "Uploading CSV to AI import pipeline...",
+        }));
+      });
+
+      setProgress({
+        stage: "processing",
+        percent: 80,
+        message: "AI processing started. This may take a moment...",
+      });
 
       setResult(response);
       setIsConfirmed(true);
+      setProgress({
+        stage: "done",
+        percent: 100,
+        message: "AI processing completed successfully.",
+      });
     } catch (err) {
       setError(err.message || "Import failed. Please try again.");
+      setProgress({
+        stage: "error",
+        percent: 0,
+        message: "Processing failed. Please retry.",
+      });
     } finally {
       setLoading(false);
     }
@@ -132,10 +166,25 @@ export default function UploadModal() {
                 Supported: .csv (Max 5MB)
               </div>
 
-              <p className="text-[11px] leading-5 text-gray-500 mt-4 max-w-md mx-auto">
-                The importer is designed for arbitrary column names and layouts.
-                It will intelligently map your columns to CRM fields after previewing the file.
+              <p className="text-[12px] leading-5 text-gray-500 mt-4 max-w-md mx-auto">
+                Required headers: created_at, name, email, country_code, mobile_without_country_code, company, city, state, country, lead_owner, crm_status, crm_note. Template includes default + custom CRM fields to reduce upload errors.
               </p>
+
+              <button
+              className="mt-7 inline-flex items-center gap-2
+              bg-teal-50
+              hover:bg-teal-100
+              text-teal-700
+              px-5
+              py-3
+              rounded-xl
+              font-medium
+              transition"
+            >
+              <FiFileText />
+              Download Sample CSV Template
+            </button>
+
             </div>
           ) : (
             <PreviewTable
@@ -149,12 +198,36 @@ export default function UploadModal() {
                 setResult(null);
                 setError("");
                 setIsConfirmed(false);
+                setProgress({ stage: "idle", percent: 0, message: "" });
               }}
             />
           )}
         </div>
 
         {error && <p className="mt-4 text-red-600 text-sm">{error}</p>}
+
+        {progress.stage !== "idle" && (
+          <div className="px-5 pb-5">
+            <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-700">
+              <div className="flex items-center justify-between gap-4">
+                <div>
+                  <p className="font-semibold">{progress.stage === "uploading" ? "Uploading" : progress.stage === "processing" ? "AI Processing" : progress.stage === "done" ? "Complete" : "Error"}</p>
+                  <p className="mt-1 text-xs text-slate-500">{progress.message}</p>
+                </div>
+                <span className="text-xs font-semibold text-slate-600">
+                  {progress.percent}%
+                </span>
+              </div>
+
+              <div className="mt-4 h-2 rounded-full bg-slate-200 overflow-hidden">
+                <div
+                  className="h-full rounded-full bg-teal-500 transition-all duration-300"
+                  style={{ width: `${progress.percent}%` }}
+                />
+              </div>
+            </div>
+          </div>
+        )}
 
         {!result && selectedFile && !loading && (
           <div className="px-5 pb-5">
@@ -178,6 +251,7 @@ export default function UploadModal() {
         setHeaders([]);
         setError("");
         setIsConfirmed(false);
+        setProgress({ stage: "idle", percent: 0, message: "" });
       }}
       className="flex-1 border rounded-lg py-2.5 text-sm font-semibold"
     >
@@ -196,7 +270,7 @@ export default function UploadModal() {
           : "bg-orange-300 cursor-not-allowed"
       }`}
     >
-      {loading ? "Processing..." : isConfirmed ? "Import Confirmed" : "Confirm Import"}
+      {loading ? "Processing..." : isConfirmed ? "Import Confirmed" : "Upload File"}
     </button>
   </div>
 )}
